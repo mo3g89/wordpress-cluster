@@ -137,7 +137,6 @@ actions:
   - cmd[${this.nodeId}]: |-
       wget ${baseUrl}/configs/nginx/nginx.conf -O /etc/nginx/nginx.conf
       wget ${baseUrl}/configs/nginx/default.conf -O /etc/nginx/conf.d/default.conf
-      wget ${baseUrl}/configs/nginx/fastcgi_cache.conf -O /etc/nginx/conf.d/fastcgi_cache.conf
       wget ${baseUrl}/configs/php/wp-upload.ini -O /etc/php.d/wp-upload.ini
       wget ${baseUrl}/configs/php/opcache.ini -O /etc/php.d/opcache.ini
       wget ${baseUrl}/configs/php/extensions.ini -O /etc/php.d/extensions.ini
