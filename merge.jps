@@ -1,0 +1,91 @@
+type: install
+version: '1.1'
+name: WordPress Cluster
+categories:
+  - apps/clusters
+  - apps/content-management
+description: Get your highly available and scalable clustered solution for WordPress,
+  the extremely popular open source CMS and blogging tool. This package is designed
+  to ensure the load tracking and distribution, as well as automatic adjusting the
+  amount of allocated resources according to it.
+logo: https://raw.githubusercontent.com/jelastic-jps/wordpress-cluster/master/images/wp-cluster.png
+baseUrl: https://raw.githubusercontent.com/sych74/wordpress-cluster/master
+
+settings:
+  fields:
+    - caption: Toplogy
+      type: list
+      name: topology
+      default: single
+      required: true
+      values:        
+        - value: single
+          caption: NginxPHP + MySQL
+        - value: cluster
+          caption: LoadBalancer + 2xNginxPHP + MariaDB Galera Cluster + Storage
+      
+    - caption: Topology
+      type: list
+      name: scheme
+      required: true      
+      dependsOn:                 
+        stack:
+            mysql:
+              - value: slave
+                caption: Master-Slave with extra slaves
+              - value: master
+                caption: Master-Master with extra slaves
+              - value: single
+                caption: Single Group Replication
+              - value: multi
+                caption: Multi Group Replication              
+
+            mariadb-dockerized:    
+              - value: slave
+                caption: Master-Slave with extra slaves
+              - value: master
+                caption: Master-Master with extra slaves
+              - value: galera
+                caption: Galera Cluster
+
+    - caption: None
+      inputType: hidden
+      type: list
+      name: nodeType
+      dependsOn:                 
+        stack:
+            mysql:
+              - value: mysql
+            mariadb-dockerized:    
+              - value: mariadb-dockerized
+
+    - caption: None
+      inputType: hidden
+      type: list
+      name: nodes
+      dependsOn:                 
+        scheme:
+            slave:
+              - value: 2
+            master:    
+              - value: 2
+            single:
+              - value: 3
+            multi:    
+              - value: 3
+            galera:    
+              - value: 3
+
+nodes:
+  nodeType: "${settings.nodeType}"
+  nodeGroup: sqldb
+  count: "${settings.nodes}"
+  cluster:
+    scheme: "${settings.scheme}"
+    jps: "https://raw.githubusercontent.com/sych74/mysql-cluster/master/addons/auto-clustering/auto-cluster.jps"
+  cloudlets: 8
+  env:
+    ON_ENV_INSTALL: "${baseUrl}/addons/auto-clustering/auto-cluster.jps"
+    SCHEME: "${settings.scheme}"
+success:
+text: You should receive a bunch of emails ;). There are credentials and endpoints.
