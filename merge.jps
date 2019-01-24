@@ -1,5 +1,5 @@
 type: install
-version: '1.1'
+vversion: 1.5.2
 name: WordPress Cluster
 categories:
   - apps/clusters
@@ -11,81 +11,84 @@ description: Get your highly available and scalable clustered solution for WordP
 logo: https://raw.githubusercontent.com/jelastic-jps/wordpress-cluster/master/images/wp-cluster.png
 baseUrl: https://raw.githubusercontent.com/sych74/wordpress-cluster/master
 
-settings:
+settings: 
   fields:
-    - caption: Toplogy
-      type: list
+    - type: list
+      caption: Topology
       name: topology
-      default: single
-      required: true
-      values:        
+      value: single
+      values:
         - value: single
-          caption: NginxPHP + MySQL
+          caption: Standalone Wordpress
+          tooltip: <h3>Standalone Wordpress</h3>Standalone solution for WordPress. <img width='314' height='280' src='https://github.com/sych74/wordpress-cluster/raw/master/images/single-topology.png?sanitize=true'>
         - value: cluster
-          caption: LoadBalancer + 2xNginxPHP + MariaDB Galera Cluster + Storage
+          caption: Wordpress Cluster
+          tooltip: <h3>Wordpress Cluster</h3>Highly available and scalable clustered solution for WordPress. <img width='314' height='280' src='https://github.com/sych74/wordpress-cluster/raw/master/images/topology.png?sanitize=true'>
+      tipParams:
+        dismissDelay: 600000
+        anchor: l
+        hideOnOver: false
+        showDelay: 0
+       
+    - type: displayfield
+      height: 20
       
-    - caption: Topology
-      type: list
-      name: scheme
-      required: true      
-      dependsOn:                 
-        stack:
-            mysql:
-              - value: slave
-                caption: Master-Slave with extra slaves
-              - value: master
-                caption: Master-Master with extra slaves
-              - value: single
-                caption: Single Group Replication
-              - value: multi
-                caption: Multi Group Replication              
+    - type: envname
+      name: envName
+      caption: Environment
+      dependsOn: region
+      
+    - type: regionlist
+      name: region
+      caption: Region
+      selectFirstAvailable: true
+      
+onInstall:
+  - creatEnv
+  - manageEnv
+    
+actions:
+  creatEnv:
+    - topologies:
+        single: 
+          type: install
+          name: Single Wordpress Topology
+          nodes: 
+          - nodeType: nginxphp
+            count: 1
+            cloudlets: 16
+          - nodeType: mysql5
+            count: 1
+            cloudlets: 8
 
-            mariadb-dockerized:    
-              - value: slave
-                caption: Master-Slave with extra slaves
-              - value: master
-                caption: Master-Master with extra slaves
-              - value: galera
-                caption: Galera Cluster
-
-    - caption: None
-      inputType: hidden
-      type: list
-      name: nodeType
-      dependsOn:                 
-        stack:
-            mysql:
-              - value: mysql
-            mariadb-dockerized:    
-              - value: mariadb-dockerized
-
-    - caption: None
-      inputType: hidden
-      type: list
-      name: nodes
-      dependsOn:                 
-        scheme:
-            slave:
-              - value: 2
-            master:    
-              - value: 2
-            single:
-              - value: 3
-            multi:    
-              - value: 3
-            galera:    
-              - value: 3
-
-nodes:
-  nodeType: "${settings.nodeType}"
-  nodeGroup: sqldb
-  count: "${settings.nodes}"
-  cluster:
-    scheme: "${settings.scheme}"
-    jps: "https://raw.githubusercontent.com/sych74/mysql-cluster/master/addons/auto-clustering/auto-cluster.jps"
-  cloudlets: 8
-  env:
-    ON_ENV_INSTALL: "${baseUrl}/addons/auto-clustering/auto-cluster.jps"
-    SCHEME: "${settings.scheme}"
-success:
-text: You should receive a bunch of emails ;). There are credentials and endpoints.
+        cluster: 
+          type: install
+          name: Wordpress Cluster Topology
+          nodes:
+            - nodeType: nginxphp
+              cloudlets: 8
+          
+      script: |      
+        topologies = toNative(typeof topologies === "string" ? new org.json.JSONObject(String(topologies)) : topologies);                  
+        var topology = topologies['${settings.topology}'];
+        if (!topology) return { result: 1, error: "unknown topology type"};
+        return { result : 0, jps: toJSON(topology) };
+        
+    - install:
+        jps: ${response.jps}
+        envName: ${settings.envName}
+        region: ${settings.region}
+  
+  manageEnv:
+    install:
+      envName: ${settings.envName}
+      jps:
+        type: update
+        name: Wordpress Manager JPS
+        
+        onInstall:
+          test
+        
+        actions:
+          test:
+            log: 'nodeIp: ${nodes.cp.first.intIP}'
