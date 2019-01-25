@@ -134,15 +134,7 @@ actions:
           - setNodeDisplayName [bl]: Load balancer
           - setNodeDisplayName [cp]: AppServer
 
-          - log: DB Galera  Setup
-          - installJps:
-              jps: https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/galera-configuration.jps
-              settings:
-                path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master"
-                db_user: "${globals.DB_USER}"
-                db_pass: "${globals.DB_PASS}"
-                custom_conf: "${baseUrl}/configs/mysql/wordpress.cnf"
-              nodeGroup: sqldb
+          - setupDB
 
           - log: CP Layer Setup
           - forEach(nodes.cp):
@@ -152,32 +144,21 @@ actions:
           - log: Download and Unpack latest WordPress release
           - cmd[storage]: wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
 
-          - log: Setup WordPress
-          - installJps:
-              jps: "${baseUrl}/scripts/setup-wordpress.jps"
-              settings:
-                db_host: DB
-                db_user: "${globals.DB_USER}"
-                db_pass: "${globals.DB_PASS}"
-                admin_passwd: "${globals.ADMIN_PASSWD}"
-                wp_title: "${settings.wp_title}"
+          - setupWP
 
           - log: Additional configuration for WordPress.
           - cmd[storage]: |-
               wget ${baseUrl}/configs/wordpress/wp-jelastic.php -O /data/wp-jelastic.php
               sed -i "s/.*'wp-settings.php';.*/require_once ABSPATH . 'wp-jelastic.php';\n&/" /data/wp-config.php
 
-          - log: Plugins install
-          - installJps:
-              jps: "${baseUrl}/scripts/setup-plugins.jps"
-              settings:
-                server_webroot: /var/www/webroot/ROOT
-
+          - setupPlugins
+          
           - log: Set permission
           - cmd[storage]: chown 700:700 -Rh /data/
 
         actions:
-          setupNode:
+
+          setupCPNode:
             cmd[${this.nodeId}]: |-
               wget ${baseUrl}/configs/nginx/nginx.conf -O /etc/nginx/nginx.conf
               wget ${baseUrl}/configs/nginx/default.conf -O /etc/nginx/conf.d/default.conf
@@ -186,3 +167,31 @@ actions:
               wget ${baseUrl}/configs/php/extensions.ini -O /etc/php.d/extensions.ini
               sudo service nginx restart
               
+          setupWP:
+            - log: Setup WordPress
+            - installJps:
+                jps: "${baseUrl}/scripts/setup-wordpress.jps"
+                settings:
+                  db_host: DB
+                  db_user: "${globals.DB_USER}"
+                  db_pass: "${globals.DB_PASS}"
+                  admin_passwd: "${globals.ADMIN_PASSWD}"
+                  wp_title: "${settings.wp_title}"
+
+          setupDB:
+            - log: DB Galera  Setup
+            - installJps:
+                jps: https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/galera-configuration.jps
+                settings:
+                  path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master"
+                  db_user: "${globals.DB_USER}"
+                  db_pass: "${globals.DB_PASS}"
+                  custom_conf: "${baseUrl}/configs/mysql/wordpress.cnf"
+                nodeGroup: sqldb
+                
+          setupPlugins:
+            - log: Plugins install
+            - installJps:
+                jps: "${baseUrl}/scripts/setup-plugins.jps"
+                settings:
+                  server_webroot: /var/www/webroot/ROOT
