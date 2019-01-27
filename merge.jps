@@ -67,12 +67,15 @@ actions:
           type: install
           name: Single Wordpress Topology
           nodes: 
-          - nodeType: nginxphp
+          - nodeType: nginxphp-dockerized
             count: 1
             cloudlets: 16
-          - nodeType: mysql5
+            displayName: AppServer
+          - nodeType: mysql
+            tag: 8.0.13
             count: 1
             cloudlets: 8
+            displayName: Database
 
         cluster: 
           type: install
@@ -86,7 +89,7 @@ actions:
             displayName: Database
             env:
               ON_ENV_INSTALL: ''
-          - nodeType: nginxphp
+          - nodeType: nginxphp-dockerized
             count: 2
             cloudlets: 16
             nodeGroup: cp
@@ -135,35 +138,39 @@ actions:
         name: Wordpress Manager JPS
         
         onInstall:
+        
+        - if ('${settings.topology}'.toLowerCase() == 'single'):
+          - log: DB Setup
+          - cmd[sqldb]: |-
+              mysql -uroot -p${nodes.sqldb.password} -e "CREATE DATABASE IF NOT EXISTS wordpress;"
+              mysql -uroot -p${nodes.sqldb.password} -e "CREATE USER '${globals.DB_USER}'@'%' IDENTIFIED BY '${globals.DB_PASS}'; GRANT ALL ON wordpress.* TO '${globals.DB_USER}'@'%'; FLUSH PRIVILEGES;"
+          - log: Wordpress Deploy
+          - deploy:
+              archive: https://wordpress.org/latest.tar.gz
+              name: WordPress-latest.tar.gz
+              context: ROOT
+        
+        - if ('${settings.topology}'.toLowerCase() == 'cluster'):
+        
           - log: Auto Scaling Triggers
           - script: "${baseUrl}/scripts/addTriggers.js"
 
-          - log: Set Node Display Name
-          - setNodeDisplayName [bl]: Load balancer
-          - setNodeDisplayName [cp]: AppServer
-
           - setupDB
 
-          - log: CP Layer Setup
-          - forEach(nodes.cp):
+          - log: Download and Unpack latest WordPress release
+          - cmd[storage]: |-
+              wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
+              chown 700:700 -Rh /data/
+
+        - log: CP Layer Setup
+        - forEach(nodes.cp):
             setupNode:
               nodeId: "${@i.id}"
 
-          - log: Download and Unpack latest WordPress release
-          - cmd[storage]: wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
-
-          - setupWP
-
-          - log: Additional configuration for WordPress.
-          - cmd[storage]: |-
-              wget ${baseUrl}/configs/wordpress/wp-jelastic.php -O /data/wp-jelastic.php
-              sed -i "s/.*'wp-settings.php';.*/require_once ABSPATH . 'wp-jelastic.php';\n&/" /data/wp-config.php
-
-          - setupPlugins
+        - setupWP
+        - setupAdditionalWPConf
+        - setupPlugins
           
-          - log: Set permission
-          - cmd[storage]: chown 700:700 -Rh /data/
-
         actions:
 
           setupCPNode:
@@ -185,6 +192,13 @@ actions:
                   db_pass: "${globals.DB_PASS}"
                   admin_passwd: "${globals.ADMIN_PASSWD}"
                   wp_title: "${settings.wp_title}"
+             
+          setupAdditionalWPConf:
+            - log: Additional configuration for WordPress.
+            - cmd[${nodes.cp.master.id}]: |-
+                wget ${baseUrl}/configs/wordpress/wp-jelastic.php -O /var/www/webroot/ROOT/wp-jelastic.php
+                sed -i "s/.*'wp-settings.php';.*/require_once ABSPATH . 'wp-jelastic.php';\n&/" /var/www/webroot/ROOT/wp-config.php
+
 
           setupDB:
             - log: DB Galera  Setup
