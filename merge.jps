@@ -34,6 +34,14 @@ settings:
         anchor: l
         hideOnOver: false
         showDelay: 0
+
+    - name: wp_title
+      caption: WP Title
+      type: string
+      default: HelloWorld
+      required: 'true'
+      regex: "^[\\w-.]*$"
+      regexText: Incorrect WP Title.
        
     - type: displayfield
       height: 20
