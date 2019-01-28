@@ -31,8 +31,8 @@ nodes:
     env:
       ON_ENV_INSTALL: ''
 
-  - nodeType: nginxphp
-    count: 2
+  - nodeType: nginxphp-dockerized
+    tag: 1.14.2-php-7.3.1
     cloudlets: 16
     nodeGroup: cp
     displayName: AppServer
@@ -59,7 +59,8 @@ nodes:
     nodeGroup: storage
     displayName: Storage
 
-  - nodeType: nginx
+  - nodeType: nginx-dockerized
+    tag: 1.14.2
     count: 1
     cloudlets: 8
     nodeGroup: bl
