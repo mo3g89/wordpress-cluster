@@ -27,7 +27,6 @@ nodes:
     count: 3
     cloudlets: 8
     nodeGroup: sqldb
-    links: sqldb:DB
     displayName: Database
     env:
       ON_ENV_INSTALL: ''
@@ -37,7 +36,9 @@ nodes:
     cloudlets: 16
     nodeGroup: cp
     displayName: AppServer
-    links: sqldb:DB
+    links:
+      - sqldb:DB
+      - nosqldb:REDIS
     volumes:
       - "/var/www/webroot/ROOT"
       - "/var/ftp/webroot/ROOT"
@@ -63,6 +64,11 @@ nodes:
     cloudlets: 8
     nodeGroup: bl
     displayName: Load balancer
+    
+  - nodeType: redis
+    count: 1
+    cloudlets: 8
+    nodeGroup: nosqldb
 
 onBeforeInit: |  
   var resp = jelastic.billing.account.GetQuotas(appid, session, 'environment.jelasticssl.enabled');
@@ -90,6 +96,8 @@ onInstall:
   - log: Set Node Display Name
   - setNodeDisplayName [bl]: Load balancer
   - setNodeDisplayName [cp]: AppServer
+  - setNodeDisplayName [nosqldb]: ObjectCache
+  - setNodeDisplayName [storage]: Storage
 
   - log: DB Galera  Setup
   - installJps:
@@ -129,7 +137,7 @@ onInstall:
       jps: "${baseUrl}/scripts/setup-plugins.jps"
       settings:
         server_webroot: /var/www/webroot/ROOT
-
+        
   - log: Set permission
   - cmd[storage]: chown 700:700 -Rh /data/
 
@@ -142,5 +150,10 @@ actions:
       wget ${baseUrl}/configs/php/opcache.ini -O /etc/php.d/opcache.ini
       wget ${baseUrl}/configs/php/extensions.ini -O /etc/php.d/extensions.ini
       sudo service nginx restart
+      
+   setupRedis: |-
+    cmd [nosqldb]: cat /etc/redis.conf| tail -1| awk '{print $2}'
+    cmd[${nodes.cp.master.id}]: wp lscache-admin set_option cache_object_pswd ${response.responses.out} --path=${SERVER_WEBROOT}
+
 
 success: /text/success.md
