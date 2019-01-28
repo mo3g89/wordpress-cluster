@@ -137,8 +137,8 @@ onInstall:
         server_webroot: /var/www/webroot/ROOT
         
   - setupRedis
-  - cleanFastCGICache
-        
+  - setupWPAdditional
+
 actions:
   setupNode:
   - cmd[${this.nodeId}]: |-
@@ -157,5 +157,11 @@ actions:
     
   cleanFastCGICache:
     cmd[cp]: rm -rf /dev/shm/fastcgi_cache/*
+    
+  setupWPAdditional:
+    - log: Additional configuration for WordPress.
+    - cmd[${nodes.cp.master.id}]: |-
+        wget ${baseUrl}/configs/wordpress/wp-jelastic.php -O /var/www/webroot/ROOT/wp-jelastic.php
+        sed -i "s/.*'wp-settings.php';.*/require_once ABSPATH . 'wp-jelastic.php';\n&/" /var/www/webroot/ROOT/wp-config.php
 
 success: /text/success.md
