@@ -137,6 +137,7 @@ onInstall:
         server_webroot: /var/www/webroot/ROOT
         
   - setupRedis
+  - cleanFastCGICache
         
 actions:
   setupNode:
@@ -153,5 +154,8 @@ actions:
   setupRedis:
     - cmd [nosqldb]: cat /etc/redis.conf| tail -1| awk '{print $2}'
     - cmd[${nodes.cp.master.id}]: wp w3-total-cache option set objectcache.redis.password ${response.responses.out} --path=/var/www/webroot/ROOT
+    
+  cleanFastCGICache:
+    cmd[cp]: rm -rf /dev/shm/fastcgi_cache/*
 
 success: /text/success.md
