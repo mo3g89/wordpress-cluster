@@ -115,8 +115,9 @@ onInstall:
         nodeId: "${@i.id}"
 
   - log: Download and Unpack latest WordPress release
-  - cmd[storage]: wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
-
+  - cmd[storage]: 
+      - wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
+      - chown 700:700 -Rh /data/
   - log: Setup WordPress
   - installJps:
       jps: "${baseUrl}/scripts/setup-wordpress.jps"
@@ -127,11 +128,6 @@ onInstall:
         admin_passwd: "${globals.ADMIN_PASSWD}"
         wp_title: "${settings.wp_title}"
 
-  - log: Additional configuration for WordPress.
-  - cmd[storage]: |-
-      wget ${baseUrl}/configs/wordpress/wp-jelastic.php -O /data/wp-jelastic.php
-      sed -i "s/.*'wp-settings.php';.*/require_once ABSPATH . 'wp-jelastic.php';\n&/" /data/wp-config.php
-
   - log: Plugins install
   - installJps:
       jps: "${baseUrl}/scripts/setup-plugins.jps"
@@ -140,9 +136,6 @@ onInstall:
         
   - setupRedis
         
-  - log: Set permission
-  - cmd[storage]: chown 700:700 -Rh /data/
-
 actions:
   setupNode:
   - cmd[${this.nodeId}]: |-
