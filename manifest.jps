@@ -27,6 +27,7 @@ nodes:
     count: 3
     cloudlets: 8
     nodeGroup: sqldb
+    links: sqldb:DB
     displayName: Database
     env:
       ON_ENV_INSTALL: ''
