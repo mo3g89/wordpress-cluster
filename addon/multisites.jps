@@ -26,9 +26,12 @@ onInstall:
       curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x /usr/local/bin/wp
     user: root
 
+  - cmd[${nodes.cp.master.id}]: |-
+      wp w3-total-cache export ~/w3-total-cache.json --path=/var/www/webroot/ROOT/
+      wp plugin deactivate w3-total-cache --path=/var/www/webroot/ROOT
+
   - if ('${settings.mode}'.toLowerCase() == 'subdir'):
       - cmd[${nodes.cp.master.id}]: |-
-          wp plugin deactivate w3-total-cache --path=/var/www/webroot/ROOT
           wp core multisite-convert --path=/var/www/webroot/ROOT
       - cmd[cp]: |-
           wget ${baseUrl}/configs/nginx/wordpress-ms-subdir.conf -O /etc/nginx/conf.d/default.conf
@@ -37,7 +40,6 @@ onInstall:
 
   - if ('${settings.mode}'.toLowerCase() == 'subdom'):
       - cmd[${nodes.cp.master.id}]: |-
-          wp plugin deactivate w3-total-cache --path=/var/www/webroot/ROOT
           wp option update home 'http://${settings.domain}' --path=/var/www/webroot/ROOT
           wp option update siteurl 'http://${settings.domain}' --path=/var/www/webroot/ROOT
           wp core multisite-convert --path=/var/www/webroot/ROOT --subdomains 
@@ -46,3 +48,7 @@ onInstall:
           wget ${baseUrl}/configs/nginx/wordpress-ms-subdom.conf -O /etc/nginx/conf.d/default.conf
           sed -i "s/_SERVER_NAME_/${settings.domain}/g" /etc/nginx/conf.d/default.conf
           sudo /etc/init.d/nginx restart
+  
+  - cmd[${nodes.cp.master.id}]: |-
+      wp plugin activate w3-total-cache --path=/var/www/webroot/ROOT
+      wp w3-total-cache import ~/w3-total-cache.json --path=/var/www/webroot/ROOT
