@@ -8,7 +8,7 @@ settings:
     - name: old_domain
       caption: Old Domain
       type: string
-      default: ""
+      default: "old_domain"
       required: true
     - name: new_domain
       caption: New Domain
@@ -17,7 +17,8 @@ settings:
       required: true
 
 onInstall:
-  - cmd[${nodes.cp.master.id}]: |-
-      wp search-replace '${settings.old_domain}' '${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
-      wp search-replace 'http:\/\/${settings.old_domain}' 'http:\/\/${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
-      
+  if (/old_domain/.test("${setting.old_domain}")):
+    - cmd[${nodes.cp.master.id}]: 
+        wp option get siteurl --path=/var/www/webroot/ROOT
+    - cmd[${nodes.cp.master.id}]: 
+        wp search-replace '${response.responses.out}' '${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
