@@ -29,6 +29,7 @@ nodes:
     nodeGroup: sqldb
     displayName: Database
     env:
+      JELASTIC_PORTS: "4567,4568,4444"
       ON_ENV_INSTALL: ''
 
   - nodeType: nginxphp-dockerized
@@ -103,9 +104,8 @@ onInstall:
 
   - log: DB Galera  Setup
   - installJps:
-      jps: https://raw.githubusercontent.com/sych74/mysql-cluster/master/scripts/galera-configuration.jps
+      jps: https://raw.githubusercontent.com/sych74/mysql-cluster/master/scripts/new-galera-configuration.jps
       settings:
-        path: "https://raw.githubusercontent.com/sych74/mysql-cluster/master"
         db_user: "${globals.DB_USER}"
         db_pass: "${globals.DB_PASS}"
         custom_conf: "${baseUrl}/configs/mysql/wordpress.cnf"
