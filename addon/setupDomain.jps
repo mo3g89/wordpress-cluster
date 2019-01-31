@@ -18,4 +18,6 @@ settings:
 
 onInstall:
   - cmd[${nodes.cp.master.id}]: |-
-      curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x /usr/local/bin/wp
+      wp search-replace '${settings.old_domain}' '${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
+      wp search-replace 'http:\/\/${settings.old_domain}' 'http:\/\/${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
+      
