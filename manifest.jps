@@ -29,6 +29,7 @@ nodes:
     nodeGroup: sqldb
     displayName: Database
     env:
+      JELASTIC_PORTS: "4567,4568,4444"
       ON_ENV_INSTALL: ''
 
   - nodeType: nginxphp-dockerized
@@ -86,6 +87,18 @@ onAfterScaleOut[nodeGroup:bl]:
   forEach(event.response.nodes):
     setNodeDisplayName [${@i.id}]: Load balancer
 
+onAfterMigrate:
+  install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
+  envName: ${event.response.env.envName}
+  settings:
+    new_domain: ${event.response.env.domain}
+    
+onAfterClone:
+  install: ${globals.PATH}/scripts/new-galera-configuration.jps?_r=${fn.random}
+  envName: ${event.response.env.envName}
+  settings:
+    new_domain: ${event.response.env.domain}
+
 globals:
   DB_USER: jelastic-${fn.random}
   DB_PASS: "${fn.password(20)}"
@@ -105,7 +118,6 @@ onInstall:
   - installJps:
       jps: https://raw.githubusercontent.com/sych74/mysql-cluster/master/scripts/galera-configuration.jps
       settings:
-        path: "https://raw.githubusercontent.com/sych74/mysql-cluster/master"
         db_user: "${globals.DB_USER}"
         db_pass: "${globals.DB_PASS}"
         custom_conf: "${baseUrl}/configs/mysql/wordpress.cnf"
