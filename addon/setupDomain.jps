@@ -8,8 +8,8 @@ settings:
     - name: old_domain
       caption: Old Domain
       type: string
-      default: "old_domain"
-      required: true
+      default: ""
+      required: false
     - name: new_domain
       caption: New Domain
       type: string
