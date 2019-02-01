@@ -88,14 +88,14 @@ onAfterScaleOut[nodeGroup:bl]:
     setNodeDisplayName [${@i.id}]: Load balancer
 
 onAfterMigrate:
-  install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
+  install: ${baseUrl}/addon/setupDomain.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
     old_domain: ${env.domain}
     new_domain: ${event.response.env.domain}
     
 onAfterClone:
-  install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
+  install: ${baseUrl}/addon/setupDomain.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
     old_domain: ${env.domain}
@@ -134,6 +134,13 @@ onInstall:
   - cmd[storage]: 
       - wget -qO- 'https://wordpress.org/latest.tar.gz' | tar xz -C /tmp && mv /tmp/wordpress/* /data
       - chown 700:700 -Rh /data/
+
+  - log: Install WP-CLI
+  - installJps:
+      jps: "${baseUrl}/scripts/WP-CLI.jps"
+      settings:
+        targetNodeID: ${nodes.cp.master.id}
+
   - log: Setup WordPress
   - installJps:
       jps: "${baseUrl}/scripts/setup-wordpress.jps"
@@ -143,6 +150,7 @@ onInstall:
         db_pass: "${globals.DB_PASS}"
         admin_passwd: "${globals.ADMIN_PASSWD}"
         wp_title: "${settings.wp_title}"
+        targetNodeID: ${nodes.cp.master.id}
 
   - log: Plugins install
   - installJps:
