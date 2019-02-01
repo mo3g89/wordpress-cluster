@@ -92,14 +92,14 @@ onAfterMigrate:
   envName: ${event.response.env.envName}
   settings:
     old_domain: ${env.domain}
-    new_domain: ${event.response.domain}
+    new_domain: ${event.response.env.domain}
     
 onAfterClone:
   install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
     old_domain: ${env.domain}
-    new_domain: ${event.response.domain}
+    new_domain: ${event.response.env.domain}
 
 globals:
   DB_USER: jelastic-${fn.random}
