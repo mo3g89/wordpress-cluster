@@ -91,13 +91,13 @@ onAfterMigrate:
   install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
-    new_domain: ${event.response.env.domain}
+    new_domain: ${event.response.env.url}
     
 onAfterClone:
-  install: ${globals.PATH}/scripts/galera-configuration.jps?_r=${fn.random}
+  install: ${globals.PATH}/addon/setupDomain.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
-    new_domain: ${event.response.env.domain}
+    new_domain: ${event.response.env.url}
 
 globals:
   DB_USER: jelastic-${fn.random}
