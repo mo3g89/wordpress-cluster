@@ -94,7 +94,7 @@ onAfterMigrate:
     new_domain: ${event.response.env.domain}
     
 onAfterClone:
-  install: ${globals.PATH}/scripts/new-galera-configuration.jps?_r=${fn.random}
+  install: ${globals.PATH}/scripts/galera-configuration.jps?_r=${fn.random}
   envName: ${event.response.env.envName}
   settings:
     new_domain: ${event.response.env.domain}
