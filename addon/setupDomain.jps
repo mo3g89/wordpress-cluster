@@ -22,3 +22,6 @@ onInstall:
         wp option get siteurl --path=/var/www/webroot/ROOT
     - cmd[${nodes.cp.master.id}]: 
         wp search-replace '${response.responses.out}' '${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
+  if (!/old_domain/.test("${setting.old_domain}")):
+    - cmd[${nodes.cp.master.id}]: 
+        wp search-replace '${setting.old_domain}' '${settings.new_domain}' --skip-columns=guid --all-tables --path=/var/www/webroot/ROOT
